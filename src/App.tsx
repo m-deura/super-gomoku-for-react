@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './App.css';
 
 type Player = 'X' | 'O';
 type SquareValue = Player | null;
@@ -11,7 +12,16 @@ type SquareProps = {
 
 function Square({ value, onSquareClick }: SquareProps) {
   return (
-    <button className="square" onClick={onSquareClick}>
+    <button
+      className={`square ${
+        value === 'X'
+          ? 'square-x'
+          : value === 'O'
+            ? 'square-o'
+            : ''
+      }`}
+      onClick={onSquareClick}
+    >
       {value}
     </button>
   );
