@@ -159,6 +159,16 @@ export default function Game() {
     setCurrentMove(nextMove);
   }
 
+  function handleReset() {
+    if (!window.confirm('Reset the game?')) {
+      return;
+    }
+
+    const emptySquares = Array<SquareValue>(25).fill(null);
+    setHistory([emptySquares]);
+    setCurrentMove(0);
+  }
+
   const moves = history.map((_squares, move) => {
     let description;
 
@@ -187,8 +197,11 @@ export default function Game() {
         />
       </div>
 
-      <div className="game-info">
-        <ol>{moves}</ol>
+      <div className="game-sidebar">
+        <button className="reset" onClick={handleReset}>Reset</button>
+        <div className="game-info">
+          <ol>{moves}</ol>
+        </div>
       </div>
     </div>
   );
