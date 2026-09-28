@@ -1,0 +1,39 @@
+name: CI and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ソースを取得
+        uses: actions/checkout@v4
+
+      - name: Node.js を準備
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: 依存関係をインストール
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: 型チェックとビルド
+        run: npm run build
+
+      - name: 公開用ファイルを保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: dist/
+          if-no-files-found: error
