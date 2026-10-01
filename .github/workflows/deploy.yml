@@ -18,6 +18,32 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    steps:
+      - name: ソースを取得
+        uses: actions/checkout@v4
+
+      - name: Node.js を準備
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: 依存関係をインストール
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: 型チェックとビルド
+        run: npm run build
+
+      - name: 公開用ファイルを保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: dist/
+          if-no-files-found: error
+
   deploy:
     needs: build
     if: github.repository == 'm-deura/super-sanmoku-for-react' && github.ref == 'refs/heads/main'
@@ -52,29 +78,4 @@ jobs:
           mv -Tf "$temporary_link" "$base/current"
 
       - name: HTTP 応答を確認
-
-    steps:
-      - name: ソースを取得
-        uses: actions/checkout@v4
-
-      - name: Node.js を準備
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-
-      - name: 依存関係をインストール
-        run: npm ci
-
-      - name: ESLint
-        run: npm run lint
-
-      - name: 型チェックとビルド
-        run: npm run build
-
-      - name: 公開用ファイルを保存
-        uses: actions/upload-artifact@v4
-        with:
-          name: website
-          path: dist/
-          if-no-files-found: error
+        run: curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8080/ -o /dev/null
