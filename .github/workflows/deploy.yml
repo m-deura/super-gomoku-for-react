@@ -1,0 +1,80 @@
+name: CI and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+
+concurrency:
+  group: sanmoku-production
+  cancel-in-progress: false
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+  deploy:
+    needs: build
+    if: github.repository == 'm-deura/super-sanmoku-for-react' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, production]
+    timeout-minutes: 10
+
+    steps:
+      - name: ビルド成果物を取得
+        uses: actions/download-artifact@v5
+        with:
+          name: website
+          path: /var/www/sanmoku/releases/${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: 公開先を切り替える
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base=/var/www/sanmoku
+          release="$base/releases/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          temporary_link="$base/current-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          test -s "$release/index.html"
+          chmod -R u=rwX,go=rX "$release"
+
+          if [ -e "$base/current" ] && [ ! -L "$base/current" ]; then
+            echo "current がシンボリックリンクではありません" >&2
+            exit 1
+          fi
+
+          ln -s "$release" "$temporary_link"
+          mv -Tf "$temporary_link" "$base/current"
+
+      - name: HTTP 応答を確認
+
+    steps:
+      - name: ソースを取得
+        uses: actions/checkout@v4
+
+      - name: Node.js を準備
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: 依存関係をインストール
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: 型チェックとビルド
+        run: npm run build
+
+      - name: 公開用ファイルを保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: dist/
+          if-no-files-found: error
